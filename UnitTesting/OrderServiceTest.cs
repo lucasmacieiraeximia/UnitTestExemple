@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore.Storage;
-using Moq;
+using NSubstitute;
 using UnitTestExemple.Domain.Entities;
 using UnitTestExemple.Domain.Services;
 using UnitTestExemple.Data.Repository;
@@ -18,10 +18,10 @@ namespace UnitTesting
                 new Order()
             };
 
-            var mockRepository = new Mock<IOrderRepository>();
-            var sut = new OrderService(mockRepository.Object);
+            var mockRepository = Substitute.For<IOrderRepository>();
+            var sut = new OrderService(mockRepository);
 
-            mockRepository.Setup(r => r.GetAllOrdersAsync()).ReturnsAsync(expectedOrders);
+            mockRepository.GetAllOrdersAsync().Returns(expectedOrders);
 
             // Act
             var actual = await sut.GetOrdersAsync();
@@ -37,12 +37,12 @@ namespace UnitTesting
             // Arrange 
             var order = new Order();
 
-            var mockRepository = new Mock<IOrderRepository>();
-            var sut = new OrderService(mockRepository.Object);
+            var mockRepository = Substitute.For<IOrderRepository>();
+            var sut = new OrderService(mockRepository);
 
-            var mockTransaction = new Mock<IDbContextTransaction>();
-            mockRepository.Setup(c => c.BeginTransactionAsync()).ReturnsAsync(mockTransaction.Object);
-            mockRepository.Setup(c => c.GetOrderAsync(order.Id)).ReturnsAsync(order);
+            var mockTransaction = Substitute.For<IDbContextTransaction>();
+            mockRepository.BeginTransactionAsync().Returns(mockTransaction);
+            mockRepository.GetOrderAsync(Arg.Any<Guid>()).Returns(order);
 
             // Act
             var actual = await sut.SetOrderAsPaid(order.Id);
