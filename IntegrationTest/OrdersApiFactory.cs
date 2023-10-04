@@ -10,7 +10,6 @@ namespace IntegrationTesting;
 
 public class OrdersApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-
     private const int ContainerPort = 3306;
     private const int HostPort = 3307;
     private const string ContainerPassword = "my-secret-pw";

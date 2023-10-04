@@ -11,33 +11,34 @@ namespace UnitTesting
     public class OrderServiceTest
     {
         [Fact]
-        public async Task List_orders_correctly()
+        public async Task List_Orders_Should_Be_Ok()
         {
             // Arrange 
-            var orders = new[]
+            var expectedTotalOrders = 1;
+            var expectedOrders = new[]
             {
                 new Order()
             };
 
-            var mockSet = orders.AsQueryable().BuildMockDbSet();
+            var mockSet = expectedOrders.AsQueryable().BuildMockDbSet();
             var mockContext = new Mock<AppDbContext>();
             mockContext.Setup(c => c.Orders).Returns(mockSet.Object);
 
             var sut = new OrderService(mockContext.Object);
 
             // Act
-            var result = await sut.GetOrdersAsync();
+            var actual = await sut.GetOrdersAsync();
 
             // Assert
-            var total_orders = 1;
-            Assert.Equal(total_orders, result.Count());
-            Assert.Equal(orders.FirstOrDefault(), result.FirstOrDefault());
+            Assert.Equal(expectedTotalOrders, actual.Count());
+            Assert.Equal(expectedOrders.FirstOrDefault(), actual.FirstOrDefault());
         }
 
         [Fact]
         public async Task List_orders_failing_Test()
         {
             // Arrange 
+            var expectedTotalOrders = 1;
             var data = new List<Order>
             {
                 new Order()
@@ -61,8 +62,8 @@ namespace UnitTesting
             var result = await sut.GetOrdersAsync();
 
             // Assert
-            var total_orders = 1;
-            Assert.Equal(total_orders, result.Count());
+            
+            Assert.Equal(expectedTotalOrders, result.Count());
             Assert.Equal(data.FirstOrDefault(), result.FirstOrDefault());
         }
 
@@ -93,10 +94,10 @@ namespace UnitTesting
             var sut = new OrderService(mockContext.Object);
 
             // Act
-            var result = await sut.SetOrderAsPaid(order.Id);
+            var actual = await sut.SetOrderAsPaid(order.Id);
 
             // Assert
-            Assert.Equal(OrderStatus.Paid, result.Status);
+            Assert.Equal(OrderStatus.Paid, actual.Status);
         }
     }
 }
