@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Text;
 using UnitTestExemple.Application;
@@ -34,18 +35,35 @@ public class OrdersIntegrationTests : IClassFixture<OrdersApiFactory>
     public async Task Update_Order_Status_to_Paid()
     {
         // Arrange
-        var order = new Order();
-        var context = new AppDbContext();
-        context.Orders.Add(order);
         var sut = _ordersApiFactory.CreateClient();
+        var context = NewAppContextDb();
+
+        var order = new Order();
+        context.Orders.Add(order);
+        await context.SaveChangesAsync();
 
         // Act
         var actual = await sut.PutAsync($"api/order/{order.Id}/pay", null);
-        
+
         // Assert
         Assert.Equal(System.Net.HttpStatusCode.OK, actual.StatusCode);
         var actualOrder = await ReadOrderFromResponse(actual);
         Assert.Equal(OrderStatus.Paid, actualOrder.Status);
+    }
+
+    private static AppDbContext NewAppContextDb()
+    {
+        const int HostPort = 3307;
+        const string ContainerPassword = "my-secret-pw";
+
+        var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>()
+            .UseMySql(
+                $"server=localhost;port={HostPort};database=unittetstexample;uid=root;password={ContainerPassword}",
+                new MySqlServerVersion(new Version(8, 0, 34))
+            );
+
+        var context = new AppDbContext(optionsBuilder.Options);
+        return context;
     }
 
     private static async Task<HttpResponseMessage> CreateOrderAsync(HttpClient sut)

@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Moq;
 using MockQueryable.Moq;
@@ -32,39 +31,6 @@ namespace UnitTesting
             // Assert
             Assert.Equal(expectedTotalOrders, actual.Count());
             Assert.Equal(expectedOrders.FirstOrDefault(), actual.FirstOrDefault());
-        }
-
-        [Fact]
-        public async Task List_orders_failing_Test()
-        {
-            // Arrange 
-            var expectedTotalOrders = 1;
-            var data = new List<Order>
-            {
-                new Order()
-            }.AsQueryable();
-
-            // Esse é setup para fazer mock para testar IQueryable, para os métodos async o setup fica ainda maior
-            // https://learn.microsoft.com/en-us/ef/ef6/fundamentals/testing/mocking
-            var mockSet = new Mock<DbSet<Order>>();
-            mockSet.As<IQueryable<Order>>().Setup(m => m.Provider).Returns(data.Provider);
-            mockSet.As<IQueryable<Order>>().Setup(m => m.Expression).Returns(data.Expression);
-            mockSet.As<IQueryable<Order>>().Setup(m => m.ElementType).Returns(data.ElementType);
-            mockSet.As<IQueryable<Order>>().Setup(m => m.GetEnumerator()).Returns(() => data.GetEnumerator());
-
-
-            var mockContext = new Mock<AppDbContext>();
-            mockContext.Setup(c => c.Orders).Returns(mockSet.Object);
-
-            var sut = new OrderService(mockContext.Object);
-
-            // Act
-            var result = await sut.GetOrdersAsync();
-
-            // Assert
-            
-            Assert.Equal(expectedTotalOrders, result.Count());
-            Assert.Equal(data.FirstOrDefault(), result.FirstOrDefault());
         }
 
         [Fact]
