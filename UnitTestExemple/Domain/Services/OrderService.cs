@@ -1,40 +1,36 @@
-﻿using Microsoft.EntityFrameworkCore;
-using UnitTestExemple.Data;
+﻿using UnitTestExemple.Data.Repository;
 using UnitTestExemple.Domain.Entities;
 
 namespace UnitTestExemple.Domain.Services;
 
 public class OrderService
 {
-    private readonly AppDbContext _context;
+    private readonly IOrderRepository orderRepository;
 
-    public OrderService(AppDbContext context)
+    public OrderService(IOrderRepository orderRepository)
     {
-        _context = context;
+        this.orderRepository = orderRepository;
     }
 
     public async Task<IEnumerable<Order>> GetOrdersAsync()
     {
-        return await _context.Orders.AsNoTracking().ToListAsync();
+        return await orderRepository.GetAllOrdersAsync();
     }
 
     public async Task AddOrderAsync(Order order)
     {
-        _context.Orders.Add(order);
-        await _context.SaveChangesAsync();
+        await orderRepository.AddOrderAsync(order);
     }
 
     public async Task<Order> SetOrderAsPaid(Guid orderId)
     {
-        var order = await _context
-            .Orders
-            .FirstOrDefaultAsync(order => order.Id == orderId) ?? throw new Exception($"Order {orderId} not found");
+        var transaction = await orderRepository.BeginTransactionAsync();
 
-        var transaction = await _context.BeginTransactionAsync();
+        var order = await orderRepository.GetOrderAsync(orderId) ?? throw new Exception($"Order {orderId} not found");
 
         order.SetAsPaid();
 
-        _context.SaveChanges();
+        orderRepository.SaveChanges();
 
         await transaction.CommitAsync();
 

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using UnitTestExemple;
 using UnitTestExemple.Data;
+using UnitTestExemple.Data.Repository;
 using UnitTestExemple.Domain.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +13,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddHostedService<DatabaseMigrationHostedService>();
 

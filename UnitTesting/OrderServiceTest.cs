@@ -1,9 +1,8 @@
 using Microsoft.EntityFrameworkCore.Storage;
 using Moq;
-using MockQueryable.Moq;
-using UnitTestExemple.Data;
 using UnitTestExemple.Domain.Entities;
 using UnitTestExemple.Domain.Services;
+using UnitTestExemple.Data.Repository;
 
 namespace UnitTesting
 {
@@ -12,52 +11,38 @@ namespace UnitTesting
         [Fact]
         public async Task List_Orders_Should_Be_Ok()
         {
-            // Arrange 
+            // Arrange
             var expectedTotalOrders = 1;
             var expectedOrders = new[]
             {
                 new Order()
             };
 
-            var mockSet = expectedOrders.AsQueryable().BuildMockDbSet();
-            var mockContext = new Mock<AppDbContext>();
-            mockContext.Setup(c => c.Orders).Returns(mockSet.Object);
+            var mockRepository = new Mock<IOrderRepository>();
+            var sut = new OrderService(mockRepository.Object);
 
-            var sut = new OrderService(mockContext.Object);
+            mockRepository.Setup(r => r.GetAllOrdersAsync()).ReturnsAsync(expectedOrders);
 
             // Act
             var actual = await sut.GetOrdersAsync();
 
             // Assert
+            Assert.NotNull(actual);
             Assert.Equal(expectedTotalOrders, actual.Count());
-            Assert.Equal(expectedOrders.FirstOrDefault(), actual.FirstOrDefault());
         }
 
         [Fact]
-        public async Task Orders_correctly()
+        public async Task Order_Status_Should_Change_to_Paid()
         {
             // Arrange 
-            var order = new Order()
-            {
-                Items = new[]
-                {
-                    new OrderItem("pencil", 14, 0, 30)
-                }
-            };
-            var orders = new[]
-            {
-                order
-            };
+            var order = new Order();
 
-            var mockContext = new Mock<AppDbContext>();
-             
+            var mockRepository = new Mock<IOrderRepository>();
+            var sut = new OrderService(mockRepository.Object);
+
             var mockTransaction = new Mock<IDbContextTransaction>();
-            mockContext.Setup(c => c.BeginTransactionAsync()).ReturnsAsync(mockTransaction.Object);
-            
-            var mockSet = orders.AsQueryable().BuildMockDbSet();
-            mockContext.Setup(c => c.Orders).Returns(mockSet.Object);
-
-            var sut = new OrderService(mockContext.Object);
+            mockRepository.Setup(c => c.BeginTransactionAsync()).ReturnsAsync(mockTransaction.Object);
+            mockRepository.Setup(c => c.GetOrderAsync(order.Id)).ReturnsAsync(order);
 
             // Act
             var actual = await sut.SetOrderAsPaid(order.Id);

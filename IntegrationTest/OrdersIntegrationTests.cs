@@ -49,6 +49,15 @@ public class OrdersIntegrationTests : IClassFixture<OrdersApiFactory>
         Assert.Equal(System.Net.HttpStatusCode.OK, actual.StatusCode);
         var actualOrder = await ReadOrderFromResponse(actual);
         Assert.Equal(OrderStatus.Paid, actualOrder.Status);
+        AssertDatabase(context, actualOrder.Id);
+    }
+
+    private static void AssertDatabase(AppDbContext context, Guid actualOrderId)
+    {
+        var value = context.Orders.AsNoTracking().SingleOrDefault(order => order.Id == actualOrderId);
+
+        Assert.NotNull(value);
+        Assert.Equal(OrderStatus.Paid, value.Status);
     }
 
     private static AppDbContext NewAppContextDb()
