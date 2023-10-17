@@ -10,10 +10,12 @@ namespace IntegrationTesting;
 public class OrdersIntegrationTests : IClassFixture<OrdersApiFactory>
 {
     private readonly OrdersApiFactory _ordersApiFactory;
+    private readonly AppDbContext _context;
 
     public OrdersIntegrationTests(OrdersApiFactory ordersApiFactory)
     {
         _ordersApiFactory = ordersApiFactory;
+        _context = DbContextFactory.NewContext();
     }
 
     [Fact]
@@ -36,11 +38,10 @@ public class OrdersIntegrationTests : IClassFixture<OrdersApiFactory>
     {
         // Arrange
         var sut = _ordersApiFactory.CreateClient();
-        var context = NewAppContextDb();
 
         var order = new Order();
-        context.Orders.Add(order);
-        await context.SaveChangesAsync();
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
 
         // Act
         var actual = await sut.PutAsync($"api/order/{order.Id}/pay", null);
@@ -49,7 +50,10 @@ public class OrdersIntegrationTests : IClassFixture<OrdersApiFactory>
         Assert.Equal(System.Net.HttpStatusCode.OK, actual.StatusCode);
         var actualOrder = await ReadOrderFromResponse(actual);
         Assert.Equal(OrderStatus.Paid, actualOrder.Status);
-        AssertDatabase(context, actualOrder.Id);
+        AssertDatabase(_context, actualOrder.Id);
+        
+        // Teardown
+        _context.Dispose();
     }
 
     private static void AssertDatabase(AppDbContext context, Guid actualOrderId)
@@ -58,21 +62,6 @@ public class OrdersIntegrationTests : IClassFixture<OrdersApiFactory>
 
         Assert.NotNull(value);
         Assert.Equal(OrderStatus.Paid, value.Status);
-    }
-
-    private static AppDbContext NewAppContextDb()
-    {
-        const int HostPort = 3307;
-        const string ContainerPassword = "my-secret-pw";
-
-        var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>()
-            .UseMySql(
-                $"server=localhost;port={HostPort};database=unittetstexample;uid=root;password={ContainerPassword}",
-                new MySqlServerVersion(new Version(8, 0, 34))
-            );
-
-        var context = new AppDbContext(optionsBuilder.Options);
-        return context;
     }
 
     private static async Task<HttpResponseMessage> CreateOrderAsync(HttpClient sut)
@@ -93,5 +82,22 @@ public class OrdersIntegrationTests : IClassFixture<OrdersApiFactory>
     {
         var contents = await response.Content.ReadAsStringAsync();
         return JsonConvert.DeserializeObject<Order>(contents) ?? new Order();
+    }
+}
+
+public class DbContextFactory
+{
+    public static AppDbContext NewContext()
+    {
+        const int HostPort = 3307;
+        const string ContainerPassword = "my-secret-pw";
+
+        var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>()
+            .UseMySql(
+                $"server=localhost;port={HostPort};database=unittetstexample;uid=root;password={ContainerPassword}",
+                new MySqlServerVersion(new Version(8, 0, 34))
+            );
+
+        return new AppDbContext(optionsBuilder.Options);
     }
 }

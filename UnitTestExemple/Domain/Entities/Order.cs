@@ -33,12 +33,18 @@ public class Order
         return item;
     }
 
-    internal void AddItem(OrderItem orderItem)
+    public void AddItem(OrderItem orderItem)
     {
+        // Branch
+        if (orderItem.Units == 0)
+        {
+            return;
+        }
+        
         _items.Add(orderItem);
     }
 
-    internal void SetAsPaid()
+    public void SetAsPaid()
     {
         Status = OrderStatus.Paid;
     }

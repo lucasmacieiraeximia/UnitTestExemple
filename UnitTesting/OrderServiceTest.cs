@@ -17,7 +17,7 @@ namespace UnitTesting
             {
                 new Order()
             };
-
+    
             var mockRepository = Substitute.For<IOrderRepository>();
             var sut = new OrderService(mockRepository);
 
@@ -36,7 +36,6 @@ namespace UnitTesting
         {
             // Arrange 
             var order = new Order();
-
             var mockRepository = Substitute.For<IOrderRepository>();
             var sut = new OrderService(mockRepository);
 
